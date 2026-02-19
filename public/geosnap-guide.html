@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoSnap Backend — Full Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #161b27;
+  --surface2: #1d2535;
+  --border: #262f42;
+  --accent: #38bdf8;
+  --green: #4ade80;
+  --orange: #fb923c;
+  --red: #f87171;
+  --purple: #c084fc;
+  --yellow: #fbbf24;
+  --text: #e2e8f0;
+  --muted: #64748b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ── TOP NAV ── */
+nav {
+  background: rgba(15,17,23,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 200;
+  display: flex; align-items: center;
+  padding: 0 32px; gap: 0;
+  height: 56px;
+}
+
+.nav-logo {
+  font-family: 'Fraunces', serif;
+  font-weight: 900; font-size: 20px;
+  color: var(--accent);
+  margin-right: 40px;
+  letter-spacing: -0.5px;
+}
+
+.nav-link {
+  color: var(--muted); font-size: 11px;
+  letter-spacing: 2px; text-transform: uppercase;
+  text-decoration: none; padding: 0 16px;
+  height: 56px; display: flex; align-items: center;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.nav-link:hover { color: var(--text); }
+.nav-link.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── LAYOUT ── */
+.page { max-width: 900px; margin: 0 auto; padding: 48px 32px 100px; }
+
+/* ── HERO ── */
+.hero {
+  margin-bottom: 56px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid var(--border);
+}
+.hero-eyebrow {
+  font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 12px;
+}
+.hero h1 {
+  font-family: 'Fraunces', serif; font-weight: 900;
+  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  letter-spacing: -1.5px; line-height: 1.05;
+  color: #fff; margin-bottom: 16px;
+}
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); font-size: 13px; line-height: 1.8; max-width: 580px; }
+
+/* ── ARCH DIAGRAM ── */
+.arch {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 56px;
+  overflow-x: auto;
+}
+.arch-title {
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 24px;
+}
+.arch-flow {
+  display: flex; align-items: center; gap: 0;
+  flex-wrap: wrap; gap: 8px;
+}
+.arch-box {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 14px 18px;
+  border-radius: 10px; border: 1px solid;
+  text-align: center; min-width: 100px;
+}
+.arch-box-icon { font-size: 22px; }
+.arch-box-label { font-size: 10px; letter-spacing: 1px; font-weight: 500; }
+.arch-box-sub { font-size: 9px; color: var(--muted); }
+.arch-box.frontend { background: rgba(56,189,248,0.08); border-color: var(--accent); color: var(--accent); }
+.arch-box.express   { background: rgba(251,146,60,0.08); border-color: var(--orange); color: var(--orange); }
+.arch-box.geocode   { background: rgba(196,132,252,0.08); border-color: var(--purple); color: var(--purple); }
+.arch-box.mysql     { background: rgba(74,222,128,0.08); border-color: var(--green); color: var(--green); }
+.arch-box.disk      { background: rgba(251,191,36,0.08); border-color: var(--yellow); color: var(--yellow); }
+.arch-arrow { color: var(--muted); font-size: 18px; }
+
+/* ── FILE TREE ── */
+.filetree {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 48px;
+}
+.filetree-header {
+  background: var(--surface2);
+  padding: 12px 20px;
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--muted); border-bottom: 1px solid var(--border);
+}
+.filetree-body { padding: 20px 24px; line-height: 2.2; }
+.ft-folder { color: var(--yellow); }
+.ft-file   { color: var(--text); }
+.ft-new    { color: var(--green); }
+.ft-mod    { color: var(--orange); }
+.ft-note   { color: var(--muted); font-size: 11px; margin-left: 8px; }
+
+/* ── STEPS ── */
+.step {
+  margin-bottom: 56px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid var(--border);
+  animation: fadeUp 0.4s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.step-header {
+  display: flex; align-items: flex-start; gap: 16px;
+  margin-bottom: 20px;
+}
+.step-num {
+  background: var(--accent); color: #000;
+  font-family: 'Fraunces', serif; font-weight: 900;
+  font-size: 13px; width: 32px; height: 32px;
+  border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; margin-top: 4px;
+}
+.step h2 {
+  font-family: 'Fraunces', serif; font-weight: 700;
+  font-size: 22px; letter-spacing: -0.3px; color: #fff;
+  margin-bottom: 4px;
+}
+.step-file {
+  display: inline-block; font-size: 10px; letter-spacing: 1px;
+  padding: 2px 10px; border-radius: 4px;
+  background: rgba(56,189,248,0.1); color: var(--accent);
+  border: 1px solid rgba(56,189,248,0.2);
+}
+.step p {
+  color: var(--muted); font-size: 12px; line-height: 1.8;
+  margin-bottom: 20px; max-width: 620px;
+}
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #0a0d13;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.code-top {
+  background: var(--surface2);
+  padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.code-lang  { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--orange); }
+.code-fname { font-size: 10px; color: var(--muted); }
+.code-top .dots { display: flex; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot-r { background: #f87171; }
+.dot-y { background: #fbbf24; }
+.dot-g { background: #4ade80; }
+
+pre {
+  padding: 20px 24px;
+  overflow-x: auto;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; line-height: 1.8;
+  color: #c9d1d9;
+}
+.kw  { color: #ff79c6; }
+.fn  { color: #82aaff; }
+.str { color: #a8ff78; }
+.cmt { color: #4a5568; font-style: italic; }
+.num { color: #f78c6c; }
+.key { color: #fbbf24; }
+.tag { color: #f87171; }
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  display: flex; gap: 14px; padding: 16px 20px;
+  border-radius: 10px; margin-bottom: 16px;
+  font-size: 12px; line-height: 1.7;
+}
+.callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.callout-info   { background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.2); color: #94d8f5; }
+.callout-warn   { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.2); color: #fde68a; }
+.callout-success{ background: rgba(74,222,128,0.06); border: 1px solid rgba(74,222,128,0.2); color: #86efac; }
+
+/* ── COMMAND BLOCK ── */
+.cmd {
+  background: #000;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-size: 12px; color: var(--green);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+.cmd::before { content: '$ '; color: var(--muted); }
+
+/* ── API TABLE ── */
+table {
+  width: 100%; border-collapse: collapse;
+  margin-bottom: 20px; font-size: 11px;
+}
+th {
+  background: var(--surface2);
+  color: var(--muted); font-size: 9px;
+  letter-spacing: 3px; text-transform: uppercase;
+  padding: 10px 16px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+tr:hover td { background: var(--surface); }
+.method { font-weight: 500; }
+.method-post   { color: var(--orange); }
+.method-get    { color: var(--green); }
+.method-delete { color: var(--red); }
+
+.pill {
+  display: inline-block; font-size: 9px;
+  padding: 2px 8px; border-radius: 10px;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.pill-blue   { background: rgba(56,189,248,0.15); color: var(--accent); }
+.pill-green  { background: rgba(74,222,128,0.15); color: var(--green); }
+.pill-orange { background: rgba(251,146,60,0.15); color: var(--orange); }
+
+/* ── DB SCHEMA ── */
+.schema-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.schema-header {
+  background: rgba(74,222,128,0.1);
+  border-bottom: 1px solid rgba(74,222,128,0.2);
+  padding: 12px 20px;
+  font-size: 12px; color: var(--green);
+  font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+@media(max-width: 600px) {
+  .page { padding: 24px 16px 60px; }
+  nav { padding: 0 16px; }
+  .arch-flow { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">GeoSnap</div>
+  <a href="#setup"    class="nav-link active">Setup</a>
+  <a href="#files"    class="nav-link">Files</a>
+  <a href="#api"      class="nav-link">API</a>
+  <a href="#database" class="nav-link">Database</a>
+  <a href="#run"      class="nav-link">Run It</a>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">Full-Stack Guide</div>
+    <h1>GeoSnap<br><em>Backend Integration</em></h1>
+    <p>Add Node.js + Express + MySQL to your existing GeoSnap app. Every photo gets saved to a database with GPS coordinates converted to a real address — automatically.</p>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="arch">
+    <div class="arch-title">// System Architecture</div>
+    <div class="arch-flow">
+      <div class="arch-box frontend">
+        <div class="arch-box-icon">📱</div>
+        <div class="arch-box-label">Frontend</div>
+        <div class="arch-box-sub">HTML + CSS + JS</div>
+      </div>
+      <div class="arch-arrow">──►</div>
+      <div class="arch-box express">
+        <div class="arch-box-icon">⚡</div>
+        <div class="arch-box-label">Express API</div>
+        <div class="arch-box-sub">Node.js + Multer</div>
+      </div>
+      <div class="arch-arrow">──►</div>
+      <div class="arch-box geocode">
+        <div class="arch-box-icon">🌍</div>
+        <div class="arch-box-label">Nominatim</div>
+        <div class="arch-box-sub">GPS → Address</div>
+      </div>
+      <br style="width:100%">
+      <div style="width:100%;display:flex;gap:8px;align-items:center;margin-top:8px;">
+        <div style="width:186px"></div>
+        <div class="arch-arrow" style="transform:rotate(90deg)">──►</div>
+        <div style="width:100px"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:0;width:100%;padding-left:190px;">
+        <div class="arch-box mysql">
+          <div class="arch-box-icon">🗄️</div>
+          <div class="arch-box-label">MySQL</div>
+          <div class="arch-box-sub">geosnap_db</div>
+        </div>
+        <div class="arch-arrow">+</div>
+        <div class="arch-box disk">
+          <div class="arch-box-icon">💾</div>
+          <div class="arch-box-label">Disk</div>
+          <div class="arch-box-sub">uploads/ folder</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILE TREE -->
+  <div id="files" class="filetree">
+    <div class="filetree-header">// Project File Structure</div>
+    <div class="filetree-body">
+<span class="ft-folder">geosnap/</span>
+├── <span class="ft-new">package.json</span>          <span class="ft-note">← npm dependencies</span>
+├── <span class="ft-new">.env.example</span>          <span class="ft-note">← copy to .env, add your DB password</span>
+├── <span class="ft-new">uploads/</span>              <span class="ft-note">← photos saved here (auto-created)</span>
+│
+├── <span class="ft-folder">server/</span>
+│   ├── <span class="ft-new">index.js</span>          <span class="ft-note">← Express server entry point</span>
+│   ├── <span class="ft-folder">db/</span>
+│   │   ├── <span class="ft-new">connection.js</span>  <span class="ft-note">← MySQL connection pool</span>
+│   │   └── <span class="ft-new">schema.sql</span>     <span class="ft-note">← run this once to create tables</span>
+│   ├── <span class="ft-folder">routes/</span>
+│   │   └── <span class="ft-new">photos.js</span>      <span class="ft-note">← all /api/photos routes</span>
+│   └── <span class="ft-folder">services/</span>
+│       └── <span class="ft-new">geocode.js</span>    <span class="ft-note">← GPS → address converter</span>
+│
+└── <span class="ft-folder">public/</span>            <span class="ft-note">← your existing frontend files</span>
+    ├── <span class="ft-mod">index.html</span>        <span class="ft-note">← your HTML (unchanged)</span>
+    ├── <span class="ft-mod">photo-location-app.css</span> <span class="ft-note">← your CSS (unchanged)</span>
+    └── <span class="ft-mod">photo-location-app.js</span>  <span class="ft-note">← UPDATED: now calls the API</span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────── -->
+  <!-- STEP 1: INSTALL -->
+  <!-- ─────────────────────────────── -->
+  <div id="setup" class="step">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div>
+        <h2>Install Dependencies</h2>
+        <span class="step-file">package.json</span>
+      </div>
+    </div>
+    <p>Create the project folder, copy your frontend files into <code>public/</code>, then run npm install. This installs Express, Multer (file uploads), mysql2, uuid, and dotenv.</p>
+
+    <div class="cmd">mkdir geosnap && cd geosnap</div>
+    <div class="cmd">npm init -y</div>
+    <div class="cmd">npm install express cors multer mysql2 uuid dotenv node-fetch</div>
+    <div class="cmd">npm install --save-dev nodemon</div>
+
+    <div class="code-block">
+      <div class="code-top">
+        <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+        <span class="code-lang">JSON</span>
+        <span class="code-fname">package.json</span>
+      </div>
+      <pre>{
+  <span class="key">"scripts"</span>: {
+    <span class="key">"start"</span>: <span class="str">"node server/index.js"</span>,
+    <span class="key">"dev"</span>:   <span class="str">"nodemon server/index.js"</span>   <span class="cmt">// auto-restarts on file changes</span>
+  },
+  <span class="key">"dependencies"</span>: {
+    <span class="key">"cors"</span>:        <span class="str">"^2.8.5"</span>,
+    <span class="key">"dotenv"</span>:      <span class="str">"^16.3.1"</span>,
+    <span class="key">"express"</span>:     <span class="str">"^4.18.2"</span>,
+    <span class="key">"multer"</span>:      <span class="str">"^1.4.5-lts.1"</span>,  <span class="cmt">// handles photo file upload</span>
+    <span class="key">"mysql2"</span>:      <span class="str">"^3.6.5"</span>,         <span class="cmt">// MySQL driver</span>
+    <span class="key">"node-fetch"</span>:  <span class="str">"^3.3.2"</span>,         <span class="cmt">// not needed if using built-in https</span>
+    <span class="key">"uuid"</span>:        <span class="str">"^9.0.0"</span>          <span class="cmt">// generates unique photo filenames</span>
+  }
+}</pre>
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚠️</span>
+      <span>Copy your existing <code>index.html</code>, <code>photo-location-app.css</code> into the <code>public/</code> folder. Copy the <strong>new updated</strong> <code>photo-location-app.js</code> (provided below) there too — it now calls the backend API.</span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────── -->
+  <!-- STEP 2: .ENV -->
+  <!-- ─────────────────────────────── -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div>
+        <h2>Configure Environment Variables</h2>
+        <span class="step-file">.env</span>
+      </div>
+    </div>
+    <p>Copy <code>.env.example</code> to <code>.env</code> and fill in your MySQL credentials. This file is never committed to git — it keeps secrets safe.</p>
+
+    <div class="cmd">cp .env.example .env</div>
+
+    <div class="code-block">
+      <div class="code-top">
+        <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+        <span class="code-lang">ENV</span>
+        <span class="code-fname">.env  ← fill this in!</span>
+      </div>
+      <pre><span class="cmt"># MySQL credentials</span>
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=<span class="str">your_actual_password</span>   <span class="cmt">← change this</span>
+DB_NAME=geosnap_db
+
+<span class="cmt"># Server port</span>
+PORT=3000</pre>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">ℹ️</span>
+      <span>Add <code>.env</code> to your <code>.gitignore</code> file so you never accidentally commit your database password to GitHub.</span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────── -->
+  <!-- STEP 3: DATABASE -->
+  <!-- ─────────────────────────────── -->
+  <div id="database" class="step">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div>
+        <h2>Create the MySQL Database</h2>
+        <span class="step-file">server/db/schema.sql</span>
+      </div>
+    </div>
+    <p>Run the schema file once to create the database and the <code>photos</code> table. You only need to do this one time.</p>
+
+    <div class="cmd">mysql -u root -p &lt; server/db/schema.sql</div>
+
+    <div class="schema-table">
+      <div class="schema-header">🗄️ &nbsp; photos &nbsp; table</div>
+      <table>
+        <tr>
+          <th>Column</th>
+          <th>Type</th>
+          <th>What it stores</th>
+        </tr>
+        <tr><td>id</td><td>INT AUTO_INCREMENT</td><td>Primary key</td></tr>
+        <tr><td>photo_name</td><td>VARCHAR(255) UNIQUE</td><td><span class="pill pill-orange">UUID.jpg</span> — unique filename</td></tr>
+        <tr><td>file_path</td><td>VARCHAR(500)</td><td>Path on disk: <code>uploads/abc123.jpg</code></td></tr>
+        <tr><td>latitude</td><td>DECIMAL(10,7)</td><td>GPS lat e.g. <code>40.7128000</code></td></tr>
+        <tr><td>longitude</td><td>DECIMAL(10,7)</td><td>GPS lng e.g. <code>-74.0060000</code></td></tr>
+        <tr><td>accuracy_m</td><td>FLOAT</td><td>GPS accuracy in meters</td></tr>
+        <tr><td>address_full</td><td>VARCHAR(500)</td><td>Full formatted address string</td></tr>
+        <tr><td>address_road</td><td>VARCHAR(255)</td><td>Street / road name</td></tr>
+        <tr><td>address_city</td><td>VARCHAR(100)</td><td>City or town name</td></tr>
+        <tr><td>address_state</td><td>VARCHAR(100)</td><td>State or region</td></tr>
+        <tr><td>address_country</td><td>VARCHAR(100)</td><td>Country name</td></tr>
+        <tr><td>address_postcode</td><td>VARCHAR(20)</td><td>ZIP / postal code</td></tr>
+        <tr><td>captured_at</td><td>DATETIME</td><td>When photo was taken</td></tr>
+        <tr><td>created_at</td><td>DATETIME</td><td>When row was inserted</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────── -->
+  <!-- STEP 4: GEOCODING -->
+  <!-- ─────────────────────────────── -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div>
+        <h2>GPS → Address (Reverse Geocoding)</h2>
+        <span class="step-file">server/services/geocode.js</span>
+      </div>
+    </div>
+    <p>When the server receives a photo, it calls the free <strong>OpenStreetMap Nominatim API</strong> with the latitude + longitude and gets back a full address. No API key needed.</p>
+
+    <div class="code-block">
+      <div class="code-top">
+        <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+        <span class="code-lang">JavaScript</span>
+        <span class="code-fname">server/services/geocode.js — key logic</span>
+      </div>
+      <pre><span class="cmt">// Build the Nominatim reverse geocoding URL</span>
+<span class="kw">const</span> url =
+  <span class="str">`https://nominatim.openstreetmap.org/reverse`</span> +
+  <span class="str">`?lat=<span class="key">${lat}</span>&lon=<span class="key">${lng}</span>&format=json&addressdetails=1`</span>;
+
+<span class="cmt">// Call it with your app name as User-Agent (Nominatim requires this)</span>
+<span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(url, {
+  headers: { <span class="key">"User-Agent"</span>: <span class="str">"GeoSnapApp/1.0"</span> }
+});
+
+<span class="kw">const</span> json = <span class="kw">await</span> response.<span class="fn">json</span>();
+
+<span class="cmt">// Nominatim returns this address structure:</span>
+<span class="cmt">// json.address = { road, city, town, state, country, postcode, ... }</span>
+<span class="cmt">// json.display_name = "Full formatted address, City, Country"</span>
+
+<span class="kw">return</span> {
+  address_full:     json.display_name,
+  address_road:     json.address.road,
+  address_city:     json.address.city || json.address.town,
+  address_state:    json.address.state,
+  address_country:  json.address.country,
+  address_postcode: json.address.postcode,
+};</pre>
+    </div>
+
+    <div class="callout callout-success">
+      <span class="callout-icon">✅</span>
+      <span><strong>Nominatim is free</strong> with a fair-use policy of max 1 request/second. For higher volume, consider Google Maps Geocoding API or Mapbox instead — just swap out the URL and parsing logic in <code>geocode.js</code>.</span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────── -->
+  <!-- STEP 5: API ROUTES -->
+  <!-- ─────────────────────────────── -->
+  <div id="api" class="step">
+    <div class="step-header">
+      <div class="step-num">5</div>
+      <div>
+        <h2>API Endpoints</h2>
+        <span class="step-file">server/routes/photos.js</span>
+      </div>
+    </div>
+    <p>The Express router handles 4 routes. The most important is <code>POST /upload</code> — it receives the photo from the frontend, geocodes the GPS, and saves everything to MySQL.</p>
+
+    <table>
+      <tr>
+        <th>Method</th><th>URL</th><th>What it does</th><th>Returns</th>
+      </tr>
+      <tr>
+        <td><span class="method method-post">POST</span></td>
+        <td><code>/api/photos/upload</code></td>
+        <td>Save photo + GPS → DB</td>
+        <td><span class="pill pill-green">201</span> photo_id, address</td>
+      </tr>
+      <tr>
+        <td><span class="method method-get">GET</span></td>
+        <td><code>/api/photos</code></td>
+        <td>List all saved photos</td>
+        <td><span class="pill pill-green">200</span> array of photos</td>
+      </tr>
+      <tr>
+        <td><span class="method method-get">GET</span></td>
+        <td><code>/api/photos/:id</code></td>
+        <td>Get one photo by ID</td>
+        <td><span class="pill pill-green">200</span> single photo</td>
+      </tr>
+      <tr>
+        <td><span class="method method-delete">DELETE</span></td>
+        <td><code>/api/photos/:id</code></td>
+        <td>Delete from DB + disk</td>
+        <td><span class="pill pill-green">200</span> success</td>
+      </tr>
+    </table>
+
+    <div class="code-block">
+      <div class="code-top">
+        <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+        <span class="code-lang">JavaScript</span>
+        <span class="code-fname">POST /api/photos/upload — what happens step by step</span>
+      </div>
+      <pre><span class="cmt">// 1. Multer receives the multipart/form-data and saves photo to disk</span>
+<span class="cmt">//    Generates filename: "a1b2c3d4-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jpg"</span>
+
+<span class="cmt">// 2. Validate lat + lng from request body</span>
+<span class="kw">const</span> lat = <span class="fn">parseFloat</span>(req.body.latitude);
+<span class="kw">const</span> lng = <span class="fn">parseFloat</span>(req.body.longitude);
+
+<span class="cmt">// 3. Call Nominatim to get address from GPS</span>
+<span class="kw">const</span> address = <span class="kw">await</span> <span class="fn">reverseGeocode</span>(lat, lng);
+<span class="cmt">// address = { address_full, address_city, address_country, ... }</span>
+
+<span class="cmt">// 4. Insert all data into MySQL in one query</span>
+<span class="kw">const</span> [result] = <span class="kw">await</span> pool.<span class="fn">execute</span>(
+  <span class="str">`INSERT INTO photos (photo_name, file_path,
+    latitude, longitude, accuracy_m,
+    address_full, address_city, address_country, ...)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ...)`</span>,
+  [photoName, filePath, lat, lng, acc, ...Object.<span class="fn">values</span>(address)]
+);
+
+<span class="cmt">// 5. Respond with the new record's ID and address</span>
+res.<span class="fn">json</span>({ <span class="key">success</span>: <span class="kw">true</span>, <span class="key">photo_id</span>: result.insertId, address });</pre>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────── -->
+  <!-- STEP 6: FRONTEND CHANGE -->
+  <!-- ─────────────────────────────── -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">6</div>
+      <div>
+        <h2>Frontend: Send Photo to Server</h2>
+        <span class="step-file">public/photo-location-app.js — updated</span>
+      </div>
+    </div>
+    <p>One new function <code>saveToBackend()</code> is added to your JS. It converts the canvas image to a Blob, wraps it in FormData, and POSTs it to the API. This is called automatically after every capture.</p>
+
+    <div class="code-block">
+      <div class="code-top">
+        <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+        <span class="code-lang">JavaScript</span>
+        <span class="code-fname">saveToBackend() — new function in photo-location-app.js</span>
+      </div>
+      <pre><span class="kw">async function</span> <span class="fn">saveToBackend</span>() {
+  <span class="cmt">// 1. Convert base64 canvas image → real Blob (needed for FormData)</span>
+  <span class="kw">const</span> blob = <span class="fn">dataUrlToBlob</span>(capturedDataUrl);
+
+  <span class="cmt">// 2. Build FormData — like an HTML form with file + fields</span>
+  <span class="kw">const</span> formData = <span class="kw">new</span> <span class="fn">FormData</span>();
+  formData.<span class="fn">append</span>(<span class="str">"photo"</span>,       blob, <span class="str">"photo.jpg"</span>);  <span class="cmt">// the image</span>
+  formData.<span class="fn">append</span>(<span class="str">"latitude"</span>,    currentLocation.lat);
+  formData.<span class="fn">append</span>(<span class="str">"longitude"</span>,   currentLocation.lng);
+  formData.<span class="fn">append</span>(<span class="str">"accuracy"</span>,    currentLocation.acc);
+  formData.<span class="fn">append</span>(<span class="str">"captured_at"</span>, currentLocation.time.<span class="fn">toISOString</span>());
+
+  <span class="cmt">// 3. POST to backend — no Content-Type header (browser sets it)</span>
+  <span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">"/api/photos/upload"</span>, {
+    method: <span class="str">"POST"</span>,
+    body:   formData,
+  });
+
+  <span class="kw">const</span> result = <span class="kw">await</span> response.<span class="fn">json</span>();
+  <span class="cmt">// result = { success: true, photo_id: 42, photo_name: "uuid.jpg", address: {...} }</span>
+
+  <span class="cmt">// 4. Show the real address from reverse geocoding</span>
+  <span class="fn">setSaveStatus</span>(<span class="str">`✅ Saved! ID: <span class="key">${result.photo_id}</span>`</span>);
+}
+
+<span class="cmt">// Helper: base64 data URL → Blob</span>
+<span class="kw">function</span> <span class="fn">dataUrlToBlob</span>(dataUrl) {
+  <span class="kw">const</span> parts  = dataUrl.<span class="fn">split</span>(<span class="str">","</span>);
+  <span class="kw">const</span> mime   = parts[<span class="num">0</span>].<span class="fn">match</span>(<span class="str">/:(.*?);/</span>)[<span class="num">1</span>];
+  <span class="kw">const</span> binary = <span class="fn">atob</span>(parts[<span class="num">1</span>]);
+  <span class="kw">const</span> array  = <span class="kw">new</span> <span class="fn">Uint8Array</span>(binary.length);
+  <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i &lt; binary.length; i++)
+    array[i] = binary.<span class="fn">charCodeAt</span>(i);
+  <span class="kw">return</span> <span class="kw">new</span> <span class="fn">Blob</span>([array], { <span class="key">type</span>: mime });
+}</pre>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────── -->
+  <!-- STEP 7: RUN IT -->
+  <!-- ─────────────────────────────── -->
+  <div id="run" class="step" style="border-bottom:none">
+    <div class="step-header">
+      <div class="step-num">7</div>
+      <div>
+        <h2>Run the App</h2>
+        <span class="step-file">terminal</span>
+      </div>
+    </div>
+    <p>Make sure MySQL is running, then start the Node.js server. Open the browser and the app runs just like before — but now every photo is saved to the database.</p>
+
+    <div class="cmd">mysql -u root -p &lt; server/db/schema.sql</div>
+    <div class="cmd">npm run dev</div>
+
+    <div class="callout callout-success">
+      <span class="callout-icon">🚀</span>
+      <span>Server starts at <strong>http://localhost:3000</strong><br>
+      Health check: <strong>http://localhost:3000/api/health</strong><br>
+      All photos: <strong>http://localhost:3000/api/photos</strong></span>
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚠️</span>
+      <span>Camera + GPS only work on <strong>HTTPS</strong> or <strong>localhost</strong>. For production, deploy behind an HTTPS proxy (nginx + Let's Encrypt). On mobile testing, use <code>ngrok</code> to expose localhost over HTTPS.</span>
+    </div>
+
+    <div style="margin-top:24px">
+      <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">// What happens when user takes a photo</div>
+      <div class="code-block">
+        <div class="code-top"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="code-lang">flow</span></div>
+        <pre>1. User clicks 📸 Capture Photo
+2. Canvas draws video frame + GPS stamp text
+3. JS calls saveToBackend() automatically
+4. FormData sent to POST /api/photos/upload
+5. Multer saves file as &lt;uuid&gt;.jpg to /uploads/
+6. reverseGeocode(lat, lng) calls Nominatim API
+7. Address stored in MySQL with all GPS data
+8. Response sent back: { photo_id, photo_name, address }
+9. Frontend shows "✅ Saved! ID: 42" + real address</pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Active nav highlight on scroll
+const sections = ['setup','files','api','database','run'];
+window.addEventListener('scroll', () => {
+  const y = window.scrollY + 120;
+  document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active'));
+  for (const id of sections) {
+    const el = document.getElementById(id);
+    if (el && y >= el.offsetTop) {
+      const link = document.querySelector(`.nav-link[href="#${id}"]`);
+      if (link) link.classList.add('active');
+    }
+  }
+});
+</script>
+</body>
+</html>

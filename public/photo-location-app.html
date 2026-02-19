@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeoSnap – Photo + Location</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;700;900&family=DM+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./css/photo-location-app.css" />
+  </head>
+  <body>
+    <!-- ── TABS ── -->
+    <div class="tabs-header">
+      <div class="tab-logo">📸 GeoSnap</div>
+      <button class="tab-btn active" onclick="switchTab('app')">
+        Live App
+      </button>
+      <button class="tab-btn">
+        <a href="./geosnap-guide.html">View Guide</a>
+      </button>
+      <div class="user-profile" id="userProfile"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         PANEL 1: LIVE APP
+    ══════════════════════════════════════════ -->
+    <div id="app-panel" class="panel active">
+      <div class="app-card">
+        <div class="app-header">
+          <div class="app-title">GeoSnap</div>
+          <div class="app-subtitle">Photo + Location Capture</div>
+        </div>
+
+        <!-- Permission badges -->
+        <div class="perm-row">
+          <div class="perm-badge" id="camBadge">
+            <div class="perm-dot"></div>
+            Camera
+          </div>
+          <div class="perm-badge" id="gpsBadge">
+            <div class="perm-dot"></div>
+            Location
+          </div>
+        </div>
+
+        <!-- Viewfinder -->
+        <div class="viewfinder" id="viewfinder">
+          <div class="corner corner-tl"></div>
+          <div class="corner corner-tr"></div>
+          <div class="corner corner-bl"></div>
+          <div class="corner corner-br"></div>
+          <div class="viewfinder-placeholder" id="vfPlaceholder">
+            <div class="vf-icon">📷</div>
+            <div class="vf-text">Press "Start Camera"<br />to begin</div>
+          </div>
+          <video id="videoEl" autoplay playsinline muted></video>
+          <canvas id="canvasEl"></canvas>
+          <div class="gps-overlay" id="gpsOverlay">
+            <div class="gps-coords" id="gpsCoords">Fetching GPS…</div>
+            <div class="gps-addr" id="gpsAddr">Getting location name…</div>
+          </div>
+        </div>
+
+        <!-- Camera controls -->
+        <div class="controls" id="controls">
+          <div class="btn-row">
+            <button
+              class="btn btn-secondary"
+              id="btnStart"
+              onclick="startCamera()"
+            >
+              Start Camera
+            </button>
+            <button
+              class="btn btn-secondary"
+              id="btnGps"
+              onclick="getLocation()"
+            >
+              Get GPS
+            </button>
+          </div>
+          <button
+            class="btn btn-capture"
+            id="btnCapture"
+            disabled
+            onclick="capturePhoto()"
+          >
+            📸 Capture Photo
+          </button>
+          <div class="status-msg" id="statusMsg">
+            Press Start Camera to begin
+          </div>
+        </div>
+
+        <!-- Camera capture result -->
+        <div class="photo-result" id="photoResult">
+          <img id="resultImg" class="result-img" alt="Captured photo" />
+          <div class="result-meta" id="resultMeta"></div>
+
+          <!-- Company name input (shown before saving) -->
+          <div class="camera-company-wrap" id="cameraCompanyWrap">
+            <div class="camera-company-label">
+              🏢 Company / Shop Name
+              <span class="upload-step-note">(optional)</span>
+            </div>
+            <input
+              type="text"
+              id="cameraCompanyInput"
+              class="company-name-input"
+              placeholder="e.g. Saravana Bhavan, Sri Murugan Stores…"
+              maxlength="255"
+            />
+            <button
+              class="btn btn-capture"
+              id="btnSaveCamera"
+              onclick="saveWithCompany()"
+            >
+              ☁ Upload &amp; Scan Text
+            </button>
+          </div>
+
+          <button class="btn btn-primary" onclick="downloadPhoto()">
+            ⬇ Save Photo Locally
+          </button>
+          <button class="btn btn-secondary" onclick="retake()">↺ Retake</button>
+        </div>
+
+        <!-- ── SECTION DIVIDER ── -->
+        <div class="section-divider">
+          <span>or upload an image to scan text</span>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             UPLOAD IMAGE + OCR + SAVE SECTION
+        ══════════════════════════════════════════ -->
+        <div class="upload-section">
+          <div class="upload-label">📂 Upload Image — Scan &amp; Save</div>
+
+          <!-- Supported formats -->
+          <div class="format-badges">
+            <span class="format-badge">JPG</span>
+            <span class="format-badge">PNG</span>
+            <span class="format-badge">WEBP</span>
+            <span class="format-badge">English</span>
+            <span class="format-badge">தமிழ்</span>
+            <span class="format-badge">0–9</span>
+          </div>
+
+          <!-- STEP 1: Choose image -->
+          <div class="upload-step-label">① Choose Image</div>
+          <div
+            class="upload-dropzone"
+            id="uploadDropzone"
+            onclick="document.getElementById('uploadFileInput').click()"
+            ondragover="handleDragOver(event)"
+            ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event)"
+          >
+            <div class="upload-dropzone-icon">🖼️</div>
+            <div class="upload-dropzone-text">
+              <strong>Click to choose</strong> or drag &amp; drop<br />
+              Reads English · Tamil · Numbers
+            </div>
+          </div>
+          <input
+            type="file"
+            id="uploadFileInput"
+            accept="image/*"
+            onchange="handleUploadFile(event)"
+          />
+
+          <!-- STEP 2: Get location for uploaded image -->
+          <div class="upload-step-label">
+            ② Get Your Location
+            <span class="upload-step-note">(needed to save to database)</span>
+          </div>
+          <div class="upload-gps-row">
+            <button
+              class="btn-upload-gps"
+              id="btnUploadGps"
+              onclick="getUploadLocation()"
+            >
+              📍 Get My Location
+            </button>
+            <div class="upload-gps-status" id="uploadGpsStatus">
+              Location not set
+            </div>
+          </div>
+
+          <!-- STEP 3: Company Name -->
+          <div class="upload-step-label">
+            ③ Company / Shop Name
+            <span class="upload-step-note">(optional)</span>
+          </div>
+          <input
+            type="text"
+            id="companyNameInput"
+            class="company-name-input"
+            placeholder="e.g. Saravana Bhavan, Sri Murugan Stores…"
+            maxlength="255"
+          />
+
+          <!-- STEP 4: Scan + Save -->
+          <div class="upload-step-label">④ Scan Text &amp; Save</div>
+          <button
+            class="btn-upload-scan"
+            id="btnUploadScan"
+            onclick="scanAndSaveUpload()"
+            disabled
+          >
+            🔍 Scan Text &amp; Save to Database
+          </button>
+
+          <!-- Preview + result -->
+          <div class="upload-result" id="uploadResult">
+            <img
+              id="uploadPreviewImg"
+              class="upload-preview-img"
+              alt="Uploaded image"
+            />
+
+            <div class="ocr-panel">
+              <div class="ocr-spinner" id="ocrSpinner">
+                <div class="spin-dot"></div>
+                <div class="spin-dot"></div>
+                <div class="spin-dot"></div>
+                <span id="ocrSpinnerText">Scanning &amp; saving…</span>
+              </div>
+              <div id="ocrContent"></div>
+            </div>
+
+            <button class="btn-clear-upload" onclick="clearUpload()">
+              ✕ Clear / Upload Another
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- /.app-card -->
+    </div>
+    <!-- /#app-panel -->
+
+    <script src="./js/photo-location-app.js"></script>
+    <script>
+      fetch("/auth/user")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success && data.user) {
+            const profile = document.getElementById("userProfile");
+            profile.innerHTML = `
+              <img src="${data.user.picture}" alt="${data.user.name}" class="user-avatar">
+              <span class="user-name">${data.user.name}</span>
+              <a href="/auth/logout" class="logout-btn">Logout</a>
+            `;
+          }
+        })
+        .catch((err) => console.error("Failed to load user:", err));
+    </script>
+  </body>
+</html>
